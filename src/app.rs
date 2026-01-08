@@ -1,10 +1,9 @@
 use std::time::Duration;
 use color_eyre::Result;
-use ratatui::buffer::Buffer;
 use ratatui::layout::{Constraint, Layout, Rect};
-use ratatui::style::{Style, Color, Stylize};
-use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, HighlightSpacing, Padding, Paragraph, Row, StatefulWidget, Table, TableState, Widget, Wrap};
+use ratatui::style::{Stylize};
+use ratatui::text::{Line};
+use ratatui::widgets::{Block, Padding, Paragraph, Widget, Wrap};
 use ratatui::{DefaultTerminal, Frame};
 use crossterm::event::{Event, EventStream, KeyCode};
 use tokio;
@@ -13,11 +12,18 @@ use tokio_stream::StreamExt;
 #[derive(Debug, Default)]
 pub struct App {
     should_quit: bool,
+    winapi: crate::winapi::WinApi,
 }
 
 
 impl App {
-  const FRAMES_PER_SECOND: f32 = 60.0;
+    const FRAMES_PER_SECOND: f32 = 60.0;
+    pub fn new() -> Self {
+        Self {
+            should_quit: false,
+            winapi: crate::winapi::WinApi::new(),
+        }
+    }
 
     pub async fn run(mut self, mut terminal: DefaultTerminal) -> Result<()> {
         let period = Duration::from_secs_f32(1.0 / Self::FRAMES_PER_SECOND);
