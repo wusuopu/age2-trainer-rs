@@ -1,5 +1,5 @@
 use tokio;
-use age2_trainer_rs::winapi;
+use trainer_rs::winapi;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>>{

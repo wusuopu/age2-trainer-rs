@@ -114,4 +114,18 @@ impl ProcessManager {
 
     return list;
   }
+
+  pub fn find_game_process(&self, psapi_lib: &libloading::Library, kernel32_lib: &libloading::Library) -> Option<ProcessItem> {
+    let list = self.get_process_list(psapi_lib, kernel32_lib);
+
+    let mut game_process: Option<ProcessItem> = None;
+    for p in list {
+      if p.name.starts_with("age2") && p.name.ends_with(".exe") {
+        game_process = Some(p);
+        break;
+      }
+    }
+
+    return game_process;
+  }
 }

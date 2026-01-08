@@ -1,18 +1,18 @@
 use std::time::Duration;
 use color_eyre::Result;
 use ratatui::layout::{Constraint, Layout, Rect};
-use ratatui::style::{Stylize};
-use ratatui::text::{Line};
+use ratatui::style::{Color, Style, Stylize};
+use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Padding, Paragraph, Widget, Wrap};
 use ratatui::{DefaultTerminal, Frame};
 use crossterm::event::{Event, EventStream, KeyCode};
 use tokio;
 use tokio_stream::StreamExt;
 
-#[derive(Debug, Default)]
 pub struct App {
     should_quit: bool,
     winapi: crate::winapi::WinApi,
+    manager: crate::winapi::process::ProcessManager,
 }
 
 
@@ -22,6 +22,7 @@ impl App {
         Self {
             should_quit: false,
             winapi: crate::winapi::WinApi::new(),
+            manager: crate::winapi::process::ProcessManager::default(),
         }
     }
 
@@ -39,7 +40,7 @@ impl App {
         Ok(())
     }
 
-    fn render(&self, frame: &mut Frame) {
+    fn render(&mut self, frame: &mut Frame) {
         let main_layout = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]);
         let [title_area, body_area] = frame.area().layout(&main_layout);
         let title = Line::from("帝国时代2 修改器").centered().bold();
@@ -68,15 +69,44 @@ impl App {
         self.render_game_info(main_area, frame);
     }
 
-    fn render_game_info(&self, area: Rect, frame: &mut Frame) {
-        // frame.render_widget(Span::styled("游戏未运行！", Style::new().fg(Color::Red)), main_area);
+    fn render_game_info(&mut self, area: Rect, frame: &mut Frame) {
+        if self.winapi.game_process.is_none() {
+          let game_info = self.manager.find_game_process(&self.winapi.psapi_lib, &self.winapi.kernel32_lib);
+          if game_info.is_none() {
+              frame.render_widget(Span::styled("游戏程序未运行！", Style::new().fg(Color::Red)), area);
+              return;
+          }
+          let mut game_process = game_info.unwrap();
+          if let Err(_) = self.winapi.set_game_process(game_process) {
+              frame.render_widget(Span::styled("游戏程序未运行！", Style::new().fg(Color::Red)), area);
+              return;
+          }
+        }
+
+        // println!("name: {}, pid: {}", self.winapi.game_process.as_ref().unwrap().name, self.winapi.game_process.as_ref().unwrap().pid);
+
+        let ret = self.winapi.read_game_info();
+        if let Err(err) = ret {
+            frame.render_widget(Span::styled(err.to_string(), Style::new().fg(Color::Red)), area);
+            return;
+        }
+        let info = ret.unwrap();
+        if !info.is_running {
+            frame.render_widget(Span::styled("还未开始游戏！", Style::new().fg(Color::Yellow)), area);
+            return;
+        }
+
+        if let Err(_) = self.winapi.write_game_info() {
+          // 忽略错误
+        }
+
         let rows = vec![
-            Line::raw("资源"),
-            Line::raw("木材 99999"),
-            Line::raw("食物 99999"),
-            Line::raw("黄金 99999"),
-            Line::raw("石料 99999"),
-            Line::raw("人口上限 无限制"),
+            Line::raw(format!("游戏进程: {}", info.pid)),
+            Line::raw(format!("木材: {}", info.wood)),
+            Line::raw(format!("食物 {}", info.food)),
+            Line::raw(format!("黄金 {}", info.gold)),
+            Line::raw(format!("石料 {}", info.stone)),
+            Line::raw(format!("人口上限 无限制")),
         ];
         Paragraph::new(rows)
           .wrap(Wrap{ trim: true })

@@ -96,7 +96,7 @@ impl WinApi {
     }
 
     info.is_running = true;
-    println!("Base food addr value: 0x{:X}", food_addr);
+    // println!("Base food addr value: 0x{:X}", food_addr);
     let mut value = memory::read_memory::<f32>(
       &self.kernel32_lib,
       self.game_process.as_ref().unwrap().handle,
@@ -186,8 +186,8 @@ impl WinApi {
       return Ok(());
     }
 
-    println!("Write 99999.0 to food pointer:");
-    let new_value: f32 = 89999.0;
+    // println!("Write 99999.0 to food pointer:");
+    let new_value: f32 = 99999.0;
     memory::write_memory::<f32>(
       &self.kernel32_lib,
       self.game_process.as_ref().unwrap().handle,
