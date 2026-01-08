@@ -52,7 +52,7 @@ pub fn read_memory<T>(lib: &libloading::Library, process_handle: u32, addr: u32,
 /*
   通过已经加载了的 windows kernel32.dll lib，调用 WriteProcessMemory 方法写入指定进程内存地址的数据
 */
-pub fn write_memory<T>(lib: libloading::Library, process_handle: u32, addr: u32, data: &T, size: u32) -> Result<(), Box<dyn std::error::Error>> {
+pub fn write_memory<T>(lib: &libloading::Library, process_handle: u32, addr: u32, data: T, size: u32) -> Result<(), Box<dyn std::error::Error>> {
   unsafe {
     type WriteProcessMemoryFn = unsafe extern "system" fn(
       u32,              // process handle
@@ -73,13 +73,14 @@ pub fn write_memory<T>(lib: libloading::Library, process_handle: u32, addr: u32,
 
     let write_process_memory = lib.get::<WriteProcessMemoryFn>(b"WriteProcessMemory\0")?;
 
-    // let data_buf = MaybeUninit::new(data);
+    // let data_buf = MaybeUninit::new(data);               // method 1: 获取指针
+    let data_addr = &data as *const T;            // method 2: 获取指针
     let mut bytes_written: usize = 0;
     let success = write_process_memory(
       process_handle,
       addr,
-      // data_buf.as_ptr() as u32,
-      &*(data as *const T) as *const T as u32,
+      // data_buf.as_ptr() as u32,      // method 1
+      data_addr as u32,                 // method 2
       expected_size,
       &mut bytes_written as *mut usize,
     );

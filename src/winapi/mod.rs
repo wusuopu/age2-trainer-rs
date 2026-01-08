@@ -82,8 +82,6 @@ impl WinApi {
       return Ok(());
     }
 
-    info.is_running = true;
-
     let food_pointer = value + 0xA8;    // 当前食物地址指针 = 基址 + 偏移地址
     let food_addr = memory::read_memory::<u32>(
       &self.kernel32_lib,
@@ -92,6 +90,12 @@ impl WinApi {
       4
     )?;
 
+    if food_addr == 0 {
+      // 游戏程序已运行，但是还未进入游戏状态
+      return Ok(());
+    }
+
+    info.is_running = true;
     println!("Base food addr value: 0x{:X}", food_addr);
     let mut value = memory::read_memory::<f32>(
       &self.kernel32_lib,
@@ -142,6 +146,97 @@ impl WinApi {
     info.current_population = value;
 
     Ok(())
+  }
+
+  pub fn write_game_info(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+    if self.game_process.is_none() {
+      return Ok(());
+    }
+
+    // 写入游戏内存数据失败
+    if let Err(e) = self._write_game_value() {
+      self.game_process = None;
+      return Err(e);
+    }
+
+    return Ok(());
+  }
+  fn _write_game_value(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+    let mut value = memory::read_memory::<u32>(
+      &self.kernel32_lib,
+      self.game_process.as_ref().unwrap().handle,
+      BASE_FOOD_ADDR,
+      4
+    )?;
+    if value == 0 {
+      // 游戏程序已运行，但是还未进入游戏状态
+      return Ok(());
+    }
+
+    let food_pointer = value + 0xA8;    // 当前食物地址指针 = 基址 + 偏移地址
+    let food_addr = memory::read_memory::<u32>(
+      &self.kernel32_lib,
+      self.game_process.as_ref().unwrap().handle,
+      food_pointer,
+      4
+    )?;
+
+    if food_addr == 0 {
+      // 游戏程序已运行，但是还未进入游戏状态
+      return Ok(());
+    }
+
+    println!("Write 99999.0 to food pointer:");
+    let new_value: f32 = 89999.0;
+    memory::write_memory::<f32>(
+      &self.kernel32_lib,
+      self.game_process.as_ref().unwrap().handle,
+      food_addr + 0,
+      new_value.clone(),
+      4,
+    )?;
+
+    memory::write_memory::<f32>(
+      &self.kernel32_lib,
+      self.game_process.as_ref().unwrap().handle,
+      food_addr + 4,
+      new_value.clone(),
+      4,
+    )?;
+
+    memory::write_memory::<f32>(
+      &self.kernel32_lib,
+      self.game_process.as_ref().unwrap().handle,
+      food_addr + 8,
+      new_value.clone(),
+      4,
+    )?;
+
+    memory::write_memory::<f32>(
+      &self.kernel32_lib,
+      self.game_process.as_ref().unwrap().handle,
+      food_addr + 12,
+      new_value.clone(),
+      4,
+    )?;
+
+    memory::write_memory::<f32>(
+      &self.kernel32_lib,
+      self.game_process.as_ref().unwrap().handle,
+      food_addr + 16,
+      180.0,
+      4,
+    )?;
+
+    memory::write_memory::<f32>(
+      &self.kernel32_lib,
+      self.game_process.as_ref().unwrap().handle,
+      food_addr + 44,
+      080.0,
+      4,
+    )?;
+
+    return Ok(());
   }
 }
 
