@@ -43,7 +43,7 @@ impl App {
     fn render(&mut self, frame: &mut Frame) {
         let main_layout = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)]);
         let [title_area, body_area] = frame.area().layout(&main_layout);
-        let title = Line::from("帝国时代2 修改器").centered().bold();
+        let title = Line::from("帝国时代2 修改器 v2026.01.09").centered().bold();
         frame.render_widget(title, title_area);
 
         let body_layout = Layout::vertical([Constraint::Max(8), Constraint::Fill(1)]);

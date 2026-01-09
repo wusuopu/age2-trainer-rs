@@ -119,8 +119,9 @@ impl ProcessManager {
     let list = self.get_process_list(psapi_lib, kernel32_lib);
 
     let mut game_process: Option<ProcessItem> = None;
+    let current_pid = std::process::id();
     for p in list {
-      if p.name.starts_with("age2") && p.name.ends_with(".exe") {
+      if p.name.starts_with("age2") && p.name.ends_with(".exe") && p.pid != current_pid {
         game_process = Some(p);
         break;
       }
